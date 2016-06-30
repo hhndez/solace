@@ -1,0 +1,14 @@
+.classpath
+.gradle/
+.project/
+.idea/
+.settings/
+*.iml
+*.ipr
+*.iws
+build/
+/bin
+*.txt
+lib/
+out/
+solclientj/

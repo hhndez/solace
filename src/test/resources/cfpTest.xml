@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CFP xsi:noNamespaceSchemaLocation="./xsd/cfp.xsd"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <LLMParams
+            instanceName="Link"
+            cfpType="0"
+            environment="IDE">
+        <Tier>
+            <isSingleton>true</isSingleton>
+        </Tier>
+    </LLMParams>
+</CFP>

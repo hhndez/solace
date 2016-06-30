@@ -1,0 +1,185 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+import groovy.util.ConfigObject;
+
+buildscript {
+    repositories {
+        maven {
+            name "Monet repository"
+            url "http://10.100.144.58:8081/artifactory/repo/"
+        }
+    }
+
+    dependencies {
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1'
+        classpath 'net.researchgate.bmv:gradle-release:2.4.4'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'idea'
+    id 'application'
+}
+
+apply from: "http://10.100.225.5:9090/gradlescripts/common-gradle/jacoco.gradle"
+apply from: "http://10.100.225.5:9090/gradlescripts/common-gradle/artifactPublication.gradle"
+apply from: "http://10.100.225.5:9090/gradlescripts/common-gradle/commons.gradle"
+apply plugin: 'net.researchgate.release'
+
+group = 'com.bursatec.monet'
+description = ''
+
+mainClassName = 'com.Test'
+mainClassName = 'com.solacesystems.solclientj.core.samples.SimpleFlowToTopic'
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+run {    
+    /* Can pass all the properties: */
+    systemProperties System.getProperties()
+
+    /* Or just each by name: */
+    systemProperty "myvariable", System.getProperty("myvariable")
+
+    /* Need to split the space-delimited value in the exec.args */
+    args System.getProperty("exec.args").split()    
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Version': version
+    }
+    exclude '**/*.xml'
+    exclude '**/*.properties'
+    exclude '**/*.sh'
+    exclude 'bin'
+    exclude 'etc'
+    exclude 'launcher'
+}
+
+repositories {
+    maven {
+        name "BMV"
+        url "http://10.100.144.58:8081/artifactory/repo"
+    }
+}
+
+dependencies {
+    compile files ('lib/solclient.jar')
+    compile fileTree (dir: 'lib', include: '*.jar')
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    
+}
+
+
+/*
+task execute(type:JavaExec) {
+   main = mainClass
+   classpath = sourceSets.main.runtimeClasspath
+}*/
+
+processResources.doLast {
+    filterResources.execute()
+}
+
+task wrapper(type: Wrapper) { gradleVersion = '2.12' }
+
+task filterResources(type: Copy) {
+    description = 'Filtra los recursos de la aplicación de acuerdo al perfil indicado'
+
+    from "src/main/resources"
+    into "${buildDir}/resources/main"
+
+    def profileName = getProfileProperty()
+    def ConfigObject config = loadProfile(profileName)
+
+    if (config != null) {
+        def Map properties = config.flatten()
+        properties.put('version', version)
+        properties.put('mainClassName', mainClassName)
+        def password = System.getProperty('database.password') 
+        if ( password != null && !"".equals(password.trim())) {
+            properties.put('environment.jdbc.database.password', System.getProperty('database.password'))
+        }
+        filter(ReplaceTokens, tokens: properties)
+    } else {
+        throw new InvalidUserDataException("No se ha encontrado las propiedades para el perfil '" + profileName + "'")
+    }
+}
+
+task makeDirStructure() << {
+    description = 'Prepara la estructura de archivos, para deploy local o remoto'
+    File distdir = new File("${buildDir}")
+    distdir.mkdir()
+    distdir = new File("${buildDir}/out/")
+    distdir.mkdir()
+    distdir = new File("${buildDir}/out/deploy")
+    distdir.mkdir()
+    distdir = new File("${buildDir}/out/" + version)
+    distdir.mkdir()
+    distdir = new File("${buildDir}/out/" + version + "/lib")
+    distdir.mkdir()
+}
+
+task copyResourcesToDistribution(type: Copy) {
+    from "${buildDir}/resources/main"
+    into "${buildDir}/out/" + version
+    include "**/*"
+    exclude "launcher"
+}
+
+task copyLibsToDistribution(type: Copy) {
+    from configurations.runtime
+    into "${buildDir}/out/" + version + "/lib"
+    include "**.jar"
+}
+
+task copyArtifactToDistribution(type: Copy) {
+    from "${buildDir}/libs"
+    into "${buildDir}/out/" + version + "/lib"
+}
+
+task moveToDeployHome(type: Copy) {
+    from "${buildDir}/out/" + version + "/"
+    into "${buildDir}/deploy/" + version
+    include "**/*"
+}
+
+task copyLauncher(type: Copy) {
+    from "${buildDir}/resources/main/launcher"
+    into "${buildDir}/deploy"
+    include "**/*"
+}
+
+task tarDistFile(type: Tar) {
+    def envProfile = getProfileProperty()
+    from "${buildDir}/deploy/"
+    baseName applicationName + "-$envProfile"
+    compression Compression.GZIP
+    destinationDir "${buildDir}" as File
+}
+
+task zipDistFile(type: Zip) {
+    def envProfile = getProfileProperty()
+    from "${buildDir}/deploy/"
+    baseName applicationName + "-$envProfile"
+    destinationDir "${buildDir}" as File
+}
+
+task buildDistribution(dependsOn: ['makeDirStructure', 'filterResources']) << {
+    copyResourcesToDistribution.copy()
+    moveToDeployHome.copy()
+    copyLauncher.copy()
+    tarDistFile.execute()
+    zipDistFile.execute()
+}
+
+task buildDistributionIncludingLibs(dependsOn:['makeDirStructure', 'filterResources']) << {
+    copyResourcesToDistribution.copy()
+    copyLibsToDistribution.copy()
+    copyArtifactToDistribution.copy()
+    moveToDeployHome.copy()
+    copyLauncher.copy()
+    zipDistFile.execute()
+    tarDistFile.execute()
+}

@@ -1,0 +1,1 @@
+select CLAVE_TOPICO as TOPICO from MCN_TTOPICOS where id_componente = 8 AND ID_TIPO_TOPICO IN (1, 3)

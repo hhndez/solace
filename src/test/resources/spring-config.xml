@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+           http://www.springframework.org/schema/context/spring-context-4.1.xsd">
+
+    <bean id="cfpFactory" class="com.bursatec.massive.cfp.CFPFactory">
+        <property name="notifier" ref="application" />
+        <property name="factory" ref="massiveMessageFactory" />
+        <property name="cfpFileName" value="cfpTest.xml" />
+    </bean>
+
+    <!-- Notificaciones -->
+    <bean name="developer" class="com.bursatec.massive.common.support.notify.logger.DevelopmentNotifier" />
+    <bean name="application" class="com.bursatec.massive.common.support.notify.logger.ApplicationNotifier" />
+
+    <bean id="massiveMessageFactory" class="com.bursatec.massive.cfp.MassiveMessageFactory">
+        <property name="notifier" ref="application" />
+    </bean>
+
+    <bean id="cfp" factory-bean="cfpFactory" factory-method="getInstance"/>
+
+    <!-- Executors -->
+    <bean id="monetResponsesExecutor" class="com.bursatec.massive.executor.MonetResponsesExecutor" >
+        <property name="topicCC" value="@environment.app.topics.massiveTradeToCC@"/>
+        <property name="topicMonet" value="@environment.app.topics.massiveTradeToMonet@" />
+        <property name="applicationNotifier" ref="application" />
+        <property name="debugNotifier" ref="developer" />
+    </bean>
+    
+    <bean id="indexIPC" class="com.bursatec.massive.data.vo.IndexFormats" >
+    <property name="format" value="U ME" />
+    <property name="typeReg">
+    	<array>
+        	<!-- POSICION -->
+            <value>0</value>
+            <!-- LONGITUD -->
+             <value>4</value>
+        </array>
+     </property>	
+     <property name="time">
+    	<array>
+        	<!-- POSICION -->
+            <value>12</value>
+            <!-- LONGITUD -->
+            <value>8</value>
+        </array>
+     </property>
+     <property name="index">
+     	<array>
+        	<!-- POSICION -->
+            <value>69</value>
+            <!-- LONGITUD -->
+            <value>9</value>
+        </array>
+     </property>
+     <property name="trend">
+     	<array>
+        	<!-- POSICION -->
+            <value>91</value>
+            <!-- LONGITUD -->
+            <value>1</value>
+        </array>
+     </property>
+     <property name="percent">
+     	<array>
+        	<!-- POSICION -->
+            <value>86</value>
+            <!-- LONGITUD -->
+            <value>5</value>
+        </array>
+     </property>
+     <property name="header" value="35" />
+     <property name="longFormat" value="222" />
+    </bean>
+  
+    <bean id="indexExecutor" class="com.bursatec.massive.executor.IndexExecutor" >
+        <property name="topicCC" value="@environment.app.topics.massiveTradeToCC@"/>
+        <property name="applicationNotifier" ref="application" />
+        <property name="debugNotifier" ref="developer" />
+        <property name="indexFormat" ref="indexIPC" />
+    </bean>
+    
+    <!-- Listeners -->
+    <bean id="massiveMessageListener" class="com.bursatec.massive.messageListener.MassiveMessageListener" >
+        <property name="executors">
+            <map key-type="com.bursatec.common.constants.IMessageEnum.Types">
+                <entry key="TRADE_RESPONSE" value-ref="monetResponsesExecutor"/>
+                <entry key="DIRECT_TRADE_DELETE_CONTROL_COMMAND_RESPONSE" value-ref="monetResponsesExecutor"/>
+                <entry key="MARKET_STATUS_UPDATE_CONTROL_COMMAND_RESPONSE" value-ref="monetResponsesExecutor"/>
+            </map>
+        </property>
+        <property name="applicationNotifier" ref="application"/>
+    </bean>
+
+	<bean id="indexMessageListener" class="com.bursatec.massive.messageListener.IndexMessageListener" >
+        <property name="executors">
+            <map key-type="com.bursatec.common.constants.IMessageEnum.Types">
+            <entry key="BYTE_ARRAY_MESSAGE" value-ref="indexExecutor"/>
+            </map>
+        </property>
+        <property name="applicationNotifier" ref="application"/>
+    </bean>
+    
+    <bean id="automaticSuspensionJMX" class="com.bursatec.massive.jmx.AutomaticSuspension">
+    	<property name="indexMessageListener" ref="indexMessageListener" />
+        <property name="applicationNotifier" ref="application"/>
+        <property name="indexFormat" ref="indexIPC" />
+    </bean>    
+</beans>

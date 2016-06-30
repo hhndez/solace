@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.1.xsd">
+
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+          destroy-method="close">
+        <property name="driverClass" value="oracle.jdbc.driver.OracleDriver"/>
+        <property name="jdbcUrl" value="jdbc:oracle:thin:@10.100.230.4:1565:activity"/>
+        <property name="user" value="APPS_MCN"/>
+        <property name="password" value="APPS_MCN"/>
+        <property name="minPoolSize" value="5" />
+        <property name="maxPoolSize" value="5" />
+        <property name="maxStatements" value="0" />
+        <property name="statementCacheNumDeferredCloseThreads" value="1" />
+    </bean>
+    
+    <!--DATA SOURCE HQL  -->
+    <bean id="dataSourceTest" class="com.bursatec.massive.initbreaker.DataSourceEmbedded" init-method="init"
+    	destroy-method="close">
+    	<property name="createScript" value="classpath:sql/create-db.sql"/>
+    	<property name="insertScript" value="classpath:sql/insert-db.sql"/>
+    </bean>
+</beans>

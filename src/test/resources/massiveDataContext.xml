@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.1.xsd">
+
+    <bean id="abstractDao" abstract="true"
+          class="com.bursatec.massive.data.dao.impl.GenericDAOImpl">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="notifier" ref="developer" />
+    </bean>
+    
+    <bean id="abstractDaoTest" abstract="true"
+          class="com.bursatec.massive.data.dao.impl.GenericDAOImpl">
+        <property name="dataSource" ref="dataSourceTest"/>
+        <property name="notifier" ref="developer" />
+    </bean>
+    
+    <bean id="etapasSuspensionRowMapper"
+          class="com.bursatec.massive.data.mappers.EtapasSuspensionRowMapper"/>
+    
+    <bean id="nivelesSuspensionRowMapper"
+          class="com.bursatec.massive.data.mappers.NivelesSuspensionRowMapper"/>
+          
+
+    <!-- DATA ACCESS OBJECTs -->    
+    <bean id="etapasSuspensionDAO" parent="abstractDao" lazy-init="false">
+        <property name="rowMapper" ref="etapasSuspensionRowMapper" />
+        <property name="sqlListResource" value="classpath:sql/initLoadEtapasSuspension.sql" />
+    </bean>
+    
+    <bean id="nivelesSuspensionDAO" parent="abstractDao" lazy-init="false">
+        <property name="rowMapper" ref="nivelesSuspensionRowMapper" />
+        <property name="sqlListResource" value="classpath:sql/initLoadNivelesSuspension.sql" />
+    </bean>
+    
+     <bean id="etapasSuspensionDAOT" parent="abstractDaoTest" lazy-init="false">
+        <property name="rowMapper" ref="etapasSuspensionRowMapper" />
+        <property name="sqlListResource" value="classpath:sql/initLoadEtapasSuspension.sql" />
+    </bean>
+    
+    <bean id="nivelesSuspensionDAOT" parent="abstractDaoTest" lazy-init="false">
+        <property name="rowMapper" ref="nivelesSuspensionRowMapper" />
+        <property name="sqlListResource" value="classpath:sql/initLoadNivelesSuspension.sql" />
+    </bean>
+    
+</beans>
