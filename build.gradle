@@ -26,10 +26,9 @@ apply from: "http://10.100.225.5:9090/gradlescripts/common-gradle/artifactPublic
 apply from: "http://10.100.225.5:9090/gradlescripts/common-gradle/commons.gradle"
 apply plugin: 'net.researchgate.release'
 
-group = 'com.bursatec.monet'
-description = ''
+group = 'com.solacesystems'
+description = 'Examples'
 
-mainClassName = 'com.Test'
 mainClassName = 'com.solacesystems.solclientj.core.samples.SimpleFlowToTopic'
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
@@ -39,10 +38,12 @@ run {
     systemProperties System.getProperties()
 
     /* Or just each by name: */
-    systemProperty "myvariable", System.getProperty("myvariable")
+//    systemProperty "myvariable", System.getProperty("myvariable")
 
     /* Need to split the space-delimited value in the exec.args */
-    args System.getProperty("exec.args").split()    
+    def args = System.getProperty("exec.args")
+    if (args != null)
+        args System.getProperty("exec.args").split()    
 }
 
 jar {
@@ -65,18 +66,11 @@ repositories {
 }
 
 dependencies {
-    compile files ('lib/solclient.jar')
-    compile fileTree (dir: 'lib', include: '*.jar')
+//    compile files ('lib/solclient.jar')
+//    compile fileTree (dir: 'lib', include: '*.jar')
+    compile group: 'com.solacesystems', name: 'solclientj', version: '7.1.2.136'
     testCompile group: 'junit', name: 'junit', version: '4.11'
-    
 }
-
-
-/*
-task execute(type:JavaExec) {
-   main = mainClass
-   classpath = sourceSets.main.runtimeClasspath
-}*/
 
 processResources.doLast {
     filterResources.execute()
